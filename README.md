@@ -1,10 +1,10 @@
 # Ecommerce Microservices Application
 
-A modularized ecommerce application built with Spring Boot, refactored into a microservices architecture.
+A modularized ecommerce application built with Spring Boot, refactored into a microservices architecture using PostgreSQL.
 
 ## Architecture Overview
 
-The project is structured as a multi-module Maven project with a parent POM and four independent microservices. Each service has its own database, configuration, and port.
+The project is structured as a multi-module Maven project with a parent POM and four independent microservices. Each service has its own isolated PostgreSQL database.
 
 ### Services & Ports
 
@@ -15,40 +15,53 @@ The project is structured as a multi-module Maven project with a parent POM and 
 | **`user-service`** | `8082` | Handles user registration, profiles, and addresses. |
 | **`order-service`** | `8083` | Processes orders and manages order history. |
 
-## Database Access (H2 Console)
+## Infrastructure (Docker)
 
-Every microservice uses an in-memory H2 database for development. You can access the console for each service at `http://localhost:[PORT]/h2-console`.
+The project uses Docker Compose to manage a shared PostgreSQL instance and PGAdmin for database management.
 
-| Service | JDBC URL | Username | Password |
+### Starting the Databases
+Run the following command from the root directory:
+```bash
+docker-compose up -d
+```
+*The `init-db/init-databases.sh` script automatically creates the individual databases and users on the first startup.*
+
+### Database Connection Details (PostgreSQL)
+
+All services connect to `localhost:5432`.
+
+| Service | Database | Username | Password |
 | :--- | :--- | :--- | :--- |
-| **Cart** | `jdbc:h2:mem:cartdb` | `sa` | (blank) |
-| **Product** | `jdbc:h2:mem:productdb` | `sa` | (blank) |
-| **User** | `jdbc:h2:mem:userdb` | `sa` | (blank) |
-| **Order** | `jdbc:h2:mem:orderdb` | `sa` | (blank) |
+| **Cart** | `cartdb` | `cart_admin` | `password` |
+| **Product** | `productdb` | `product_admin` | `password` |
+| **User** | `userdb` | `user_admin` | `password` |
+| **Order** | `orderdb` | `order_admin` | `password` |
+
+### PGAdmin (GUI)
+Access the database management interface at: [http://localhost:5050](http://localhost:5050)
+*   **Email**: `admin@ecommerce.com`
+*   **Password**: `admin`
 
 ## Getting Started
 
 ### Prerequisites
 * Java 17
+* Docker & Docker Compose
 * Maven 3.x (or use the provided `./mvnw`)
 
-### Build the entire project
-From the root directory, run:
-```bash
-./mvnw clean install
-```
-
-### Run individual services
-You can run services independently from their respective directories:
-```bash
-cd user-service
-./mvnw spring-boot:run
-```
+### Build & Run
+1. **Start Infrastructure**: `docker-compose up -d`
+2. **Build Project**: `./mvnw clean install`
+3. **Run a Service**: 
+   ```bash
+   cd user-service
+   ./mvnw spring-boot:run
+   ```
 
 ## Microservice Principles Applied
-* **Database per Service**: Each service manages its own schema.
-* **Loose Coupling**: Services communicate via IDs (e.g., `userId`, `productId`) rather than direct database joins or shared entities.
-* **Modular Maven Structure**: Shared properties and dependencies are managed in the parent `pom.xml`.
+* **Isolated Persistence**: Each service has its own database and credentials.
+* **Loose Coupling**: Services communicate via IDs rather than direct database joins.
+* **Infrastructure as Code**: Database setup is automated via Docker.
 
 ## Project Structure
 ```
@@ -57,5 +70,7 @@ cd user-service
 ├── product-service/   # Product catalog
 ├── user-service/      # User management
 ├── order-service/     # Order processing
+├── init-db/           # SQL/Shell scripts for DB initialization
+├── docker-compose.yml # PostgreSQL & PGAdmin config
 └── pom.xml            # Parent POM
 ```
